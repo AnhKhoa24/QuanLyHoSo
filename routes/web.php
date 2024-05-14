@@ -36,10 +36,10 @@ Route::controller(HosoController::class)->group(function(){
 
 Route::controller(PhongBanController::class)->group(function(){
     Route::get('/phongban','index')->name('phongban')->middleware('auth');
-    Route::get('/phongban/create','create')->middleware('auth', 'admin');
-    Route::post('/phongban/create','store')->name('store_pb');
-    Route::post('/phongban/save','savechange')->name('save_edit');
-    Route::post('/phongban/xoa','delete');
+    Route::post('/phongban/create','store')->middleware('auth','admin');
+    Route::post('/phongban/save','savechange')->name('save_edit')->middleware('auth','admin');
+    Route::post('/phongban/xoa','delete')->middleware('auth','admin');
+    Route::post('/phongban/getpb','findpd')->middleware('auth');
 });
 
 Route::controller(NhanvienController::class)->group(function(){

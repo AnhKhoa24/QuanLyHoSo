@@ -1,49 +1,3 @@
-var isRunning = true;
-function checkCV(maCV) {
-    if (isRunning) {
-        isRunning = false;
-        swal({
-            title: "Đang xử lý...",
-            text: "Vui lòng đợi trong giây lát",
-            icon: "info",
-            buttons: false,
-            closeOnClickOutside: false,
-            allowOutsideClick: false,
-        });
-        $.ajaxSetup({
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-            }
-        });
-        $.ajax({
-            url: "/congviec/changestt",
-            type: 'POST',
-            dataType: "json",
-            data: {
-                ma_cong_viec: maCV,
-            },
-            success: function (response) {
-                swal.close();
-                swal({
-                    title: "Thành công!",
-                    text: "Đã thay đổi thành công trạng thái công việc",
-                    icon: "success"
-                });
-            },
-            error: function () {
-                swal.close();
-                swal({
-                    title: "Lỗi",
-                    text: "Máy chủ đang gặp lỗi, vui lòng thực hiện lại sau!",
-                    icon: "error",
-                })
-            }
-        });
-        setTimeout(function () {
-            isRunning = true;
-        }, 1000);
-    }
-}
 
 //PT
 var searchdef = "";
@@ -91,7 +45,7 @@ function moveNext() {
 }
 function getData(page) {
     $.ajax({
-        url: '/congviec?page=' + page,
+        url: '/nhanvien?page=' + page,
         type: "get",
         datatype: "json",
         data:
@@ -109,10 +63,10 @@ function getData(page) {
             alert('Server gặp lỗi!');
         });
 }
-function congviec_search() {
-    var search = document.querySelector('#congviec-search').value;
+function nhanvien_search() {
+    var search = document.querySelector('#nhanvien-search').value;
     $.ajax({
-        url: '/congviec',
+        url: '/nhanvien',
         type: "get",
         datatype: "json",
         data: {
@@ -140,7 +94,7 @@ function laysotrang() {
     var pageNumber = link.innerText;
     return parseInt(pageNumber);
 }
-function reloadCV() {
+function reloadNV() {
     var tht = laysotrang();
     getData(tht);
 }

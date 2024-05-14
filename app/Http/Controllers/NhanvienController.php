@@ -8,19 +8,37 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\File;
 class NhanvienController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $search = "";
+        if($request->search)
+        {
+            $search = $request->search;
+        }
         $nhanviens = DB::table('nhanviens')
             ->join('phongbans', 'nhanviens.ma_phong', 'phongbans.ma_phong')
+            ->where('ho_ten','LIKE',"%$search%")
+            ->orWhere('chuc_vu','LIKE',"%$search%")
             ->paginate(8);
+
+        if($request->ajax())
+        {
+            return [
+                'datalist'=>view('admin.nhanvien_data',['nhanviens'=>$nhanviens])->render(),
+                'trang'=>view('admin.trang',['sotrang'=>$nhanviens->lastPage(),
+                'trang'=>$nhanviens->currentPage()])->render()
+            ];
+        }
         return view('admin.nhanvien', [
             'nhanviens' => $nhanviens,
-            'title' => "Danh sách nhân viên"
+            'title' => "Danh sách nhân viên",
+            'sotrang'=>$nhanviens->lastPage(),
+            'trang'=>$nhanviens->currentPage(),
         ]);
     }
     public function findnv(Request $request)
     {
-        $nhanvien = $nhanviens = DB::table('nhanviens')
+        $nhanvien = DB::table('nhanviens')
             ->join('phongbans', 'nhanviens.ma_phong', 'phongbans.ma_phong')
             ->where('ma_nhan_vien', $request->ma_nhan_vien)
             ->first();

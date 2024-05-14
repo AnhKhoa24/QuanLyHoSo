@@ -8,22 +8,43 @@ use Illuminate\Support\Facades\DB;
 
 class HosoController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $congviecs = DB::table('congviecs')->join('hscvs','congviecs.ma_cong_viec','hscvs.ma_cong_viec')->get();
-        $hosos = DB::table('hosos')->paginate(8);
+        $search = "";
+        if ($request->search) {
+            $search = $request->search;
+        }
+        $congviecs = DB::table('congviecs')->join('hscvs', 'congviecs.ma_cong_viec', 'hscvs.ma_cong_viec')->get();
+        $hosos = DB::table('hosos')
+            ->where('ten_ho_so', 'LIKE', "%$search%")
+            ->orWhere('ma_ho_so', 'LIKE', "%$search")
+            ->paginate(5);
+        if ($request->ajax()) {
+            return [
+                'datalist' => view('admin.hoso_data', [
+                    'hosos' => $hosos,
+                    'congviecs' => $congviecs
+                ])->render(),
+                'trang' => view('admin.trang', [
+                    'sotrang' => $hosos->lastPage(),
+                    'trang' => $hosos->currentPage()
+                ])->render()
+            ];
+        }
         return view('admin.hoso', [
             'hosos' => $hosos,
-            'congviecs'=> $congviecs,
-            'title' => "Hồ sơ"
+            'congviecs' => $congviecs,
+            'title' => "Hồ sơ",
+            'sotrang' => $hosos->lastPage(),
+            'trang' => $hosos->currentPage()
         ]);
     }
     public function create()
     {
-       
+
         return view('admin.themhoso', [
             'title' => "Thêm nhân viên",
-            
+
         ]);
     }
     public function store(Request $request)
@@ -69,47 +90,44 @@ class HosoController extends Controller
     }
     public function edit($id)
     {
-        $hoso = DB::table('hosos')->where('ma_ho_so',$id)->first();
-        $congviecs = DB::table('hosos')->join('hscvs','hosos.ma_ho_so','hscvs.ma_ho_so')
-        ->join('congviecs','hscvs.ma_cong_viec','congviecs.ma_cong_viec')
-        ->where('hosos.ma_ho_so',$id)->get();
+        $hoso = DB::table('hosos')->where('ma_ho_so', $id)->first();
+        $congviecs = DB::table('hosos')->join('hscvs', 'hosos.ma_ho_so', 'hscvs.ma_ho_so')
+            ->join('congviecs', 'hscvs.ma_cong_viec', 'congviecs.ma_cong_viec')
+            ->where('hosos.ma_ho_so', $id)->get();
 
 
-        return view('admin.detailhoso',[
-            'hoso'=>$hoso,
-            'congviecs'=>$congviecs,
-            'title'=>"Chi tiết hồ sơ"
+        return view('admin.detailhoso', [
+            'hoso' => $hoso,
+            'congviecs' => $congviecs,
+            'title' => "Chi tiết hồ sơ"
         ]);
     }
     public function savechange(Request $request)
     {
         $request->validate([
-            'ma_ho_so'=>'required',
-            'ten_ho_so'=>'required',        
+            'ma_ho_so' => 'required',
+            'ten_ho_so' => 'required',
         ]);
         date_default_timezone_set('Asia/Ho_Chi_Minh');
         $current_time = date('Y-m-d H:i:s');
-        DB::table('hosos')->where('ma_ho_so',$request->ma_ho_so)
-        ->update([
-            'ten_ho_so'=>$request->ten_ho_so,
-            'mo_ta'=>$request->mo_ta,
-            'nguoi_cap_nhat'=>Auth::user()->name,
-            'ngay_cap_nhat'=>$current_time,
-        ]);
-        DB::table('hscvs')->where('ma_ho_so',$request->ma_ho_so)
-        ->delete();
-        if($request->tag != null)
-        {
-            foreach($request->tag as $item)
-            {
+        DB::table('hosos')->where('ma_ho_so', $request->ma_ho_so)
+            ->update([
+                'ten_ho_so' => $request->ten_ho_so,
+                'mo_ta' => $request->mo_ta,
+                'nguoi_cap_nhat' => Auth::user()->name,
+                'ngay_cap_nhat' => $current_time,
+            ]);
+        DB::table('hscvs')->where('ma_ho_so', $request->ma_ho_so)
+            ->delete();
+        if ($request->tag != null) {
+            foreach ($request->tag as $item) {
                 DB::table('hscvs')->insert([
-                    'ma_ho_so'=>$request->ma_ho_so,
-                    'ma_cong_viec'=>$item
+                    'ma_ho_so' => $request->ma_ho_so,
+                    'ma_cong_viec' => $item
                 ]);
             }
         }
-        return redirect('/hoso')->with('success','Cập nhật thành công!');
-
+        return redirect('/hoso')->with('success', 'Cập nhật thành công!');
     }
     public function takehs(Request $request)
     {

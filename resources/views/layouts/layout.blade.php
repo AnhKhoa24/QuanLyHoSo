@@ -15,8 +15,6 @@
     </title>
 
     <meta name="description" content="" />
-    <link rel="icon" type="image/x-icon"
-        href="https://scontent.fsgn17-1.fna.fbcdn.net/v/t39.30808-1/312455376_1252545965319890_9105224374554298734_n.jpg?stp=dst-jpg_s320x320&_nc_cat=100&ccb=1-7&_nc_sid=5f2048&_nc_ohc=7Glgta8hd1cAb6ITUbh&_nc_ht=scontent.fsgn17-1.fna&oh=00_AfCSB9zrZro21bvuSsCBOpoIZk3mMMKjRVfDdd0MxSlsGQ&oe=662141CB" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -36,6 +34,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
 </head>
 
 <body>
@@ -49,11 +48,12 @@
                     <a href="/" class="app-brand-link">
                         <span class="app-brand-logo demo">
                             <svg width="100" height="100" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path fill="#FFD700" d="M12 2.63l2.37 7.29h7.62l-6.18 4.5 2.37 7.29-6.21-4.53-6.21 4.53 2.37-7.29-6.18-4.5h7.62z"/>
-                              </svg>
-                              
+                                <path fill="#FFD700"
+                                    d="M12 2.63l2.37 7.29h7.62l-6.18 4.5 2.37 7.29-6.21-4.53-6.21 4.53 2.37-7.29-6.18-4.5h7.62z" />
+                            </svg>
+
                         </span>
-                                            
+
                         <span class="app-brand-text demo menu-text fw-bolder ms-2">VieHoso</span>
                     </a>
 
@@ -98,13 +98,13 @@
                                 </a>
                             </li>
                             <li class="menu-item">
-                                <a href="{{ route('congviec') }}"  class="menu-link">
+                                <a href="{{ route('congviec') }}" class="menu-link">
                                     <div>Công việc</div>
                                 </a>
                             </li>
                         </ul>
                     </li>
-                    
+
                 </ul>
             </aside>
             <!-- / Menu -->
@@ -191,7 +191,7 @@
                                                 <i class="bx bx-user me-2"></i>
                                                 <span class="align-middle">Trang cá nhân</span>
                                             </a>
-                                        </li>                                    
+                                        </li>
                                         <li>
                                             <a class="dropdown-item" href="#">
                                                 <span class="d-flex align-items-center align-middle">
@@ -226,13 +226,30 @@
                     </div>
                 </nav>
 
-                <!-- / Navbar -->
 
                 <!-- Content wrapper -->
                 <div class="content-wrapper">
                     @yield('content')
                 </div>
                 <!-- Content wrapper -->
+                @include('admin.error')
+                <!-- / Navbar -->
+                <!-- Content wrapper -->
+                <div class="content-wrapper">
+                    <div class="bs-toast toast toast-placement-ex m-2 fade bg-primary bottom-0 end-0 hide"
+                        role="alert" aria-live="assertive" aria-atomic="true" data-delay="2000">
+                        <div class="toast-header">
+                            <i class="bx bx-bell me-2"></i>
+                            <div class="me-auto fw-semibold">Thông báo</div>
+                            <small>Vừa xong</small>
+                            <button type="button" class="btn-close" data-bs-dismiss="toast"
+                                aria-label="Close"></button>
+                        </div>
+                        <div class="toast-body" id="thongbao-realtime">
+
+                        </div>
+                    </div>
+                </div>
             </div>
             <!-- / Layout page -->
         </div>
@@ -252,7 +269,7 @@
     <script>
         $(document).ready(function() {
 
-            var congviecs =[];
+            var congviecs = [];
 
             @if (isset($congviecs) && !empty($congviecs))
                 var congviecs = {!! json_encode($congviecs) !!};
@@ -295,26 +312,70 @@
             });
         });
     </script>
+    <script>
+        var local_user_id = "{{ Auth::user()->id }}";
+    </script>
+    <script>
+        var csrf = "{{ csrf_token() }}";
+    </script>
+    <script>
+        // Enable pusher logging - don't include this in production
+        Pusher.logToConsole = true;
 
+        var pusher = new Pusher('ea6012be0da9b8704099', {
+            cluster: 'ap1'
+        });
 
+        var channel = pusher.subscribe('thongbaoduan');
+        channel.bind('thongbaoduan', function(data) {
+            if (local_user_id != data.user_id) {
+                //The realtime notification 
+                var toast = document.querySelector('.bs-toast');
+                if (toast) {
+                    toast.classList.remove('hide');
+                    toast.classList.add('show');
+                    document.getElementById('thongbao-realtime').innerHTML = data.content;
+                    setTimeout(function() {
+                        toast.classList.remove('show');
+                        toast.classList.add('hide');
+                    }, 6000);
 
+                }
+                //Loading data công việc
+                if (isScriptLoaded('assets/congviec.js')) {
+                    reloadCV();
+                }
+                //Loading data phòng ban
+                if (isScriptLoaded('assets/handle.js')) {
+                    reloadPB();
+                }
+            }
+        });
 
-
-    {{-- <script src="{{ asset('assets/vendor/libs/jquery/jquery.js') }}"></script> --}}
+        // Kiểm tra xem một tệp JS đã được liên kết thành công hay không
+        function isScriptLoaded(url) {
+            var scripts = document.getElementsByTagName('script');
+            for (var i = 0; i < scripts.length; i++) {
+                if (scripts[i].src && scripts[i].src.includes(url)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    </script>
+    <script>
+        var csrf = "{{ csrf_token() }}"
+    </script>
     <script src="{{ asset('assets/js/sweetalert.min.js') }}"></script>
     <script src="{{ asset('assets/vendor/libs/popper/popper.js') }}"></script>
     <script src="{{ asset('assets/vendor/js/bootstrap.js') }}"></script>
     <script src="{{ asset('assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js') }}"></script>
     <script src="{{ asset('assets/vendor/js/menu.js') }}"></script>
-    {{-- <script src="{{ asset('assets/vendor/libs/apex-charts/apexcharts.js') }}"></script> --}}
     <script src="{{ asset('assets/js/main.js') }}"></script>
     <script src="{{ asset('assets/js/dashboards-analytics.js') }}"></script>
-    {{-- <script async defer src="https://buttons.github.io/buttons.js"></script> --}}
-    {{-- <script src="{{ asset('assets/js/buttons.js') }}"></script> --}}
-   
     <script src="{{ asset('assets/nhanvien.js') }}"></script>
 
-    
+
 </body>
 
 </html>

@@ -1,51 +1,3 @@
-var isRunning = true;
-function checkCV(maCV) {
-    if (isRunning) {
-        isRunning = false;
-        swal({
-            title: "Đang xử lý...",
-            text: "Vui lòng đợi trong giây lát",
-            icon: "info",
-            buttons: false,
-            closeOnClickOutside: false,
-            allowOutsideClick: false,
-        });
-        $.ajaxSetup({
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-            }
-        });
-        $.ajax({
-            url: "/congviec/changestt",
-            type: 'POST',
-            dataType: "json",
-            data: {
-                ma_cong_viec: maCV,
-            },
-            success: function (response) {
-                swal.close();
-                swal({
-                    title: "Thành công!",
-                    text: "Đã thay đổi thành công trạng thái công việc",
-                    icon: "success"
-                });
-            },
-            error: function () {
-                swal.close();
-                swal({
-                    title: "Lỗi",
-                    text: "Máy chủ đang gặp lỗi, vui lòng thực hiện lại sau!",
-                    icon: "error",
-                })
-            }
-        });
-        setTimeout(function () {
-            isRunning = true;
-        }, 1000);
-    }
-}
-
-//PT
 var searchdef = "";
 $(window).on('hashchange', function () {
     if (window.location.hash) {
@@ -91,7 +43,7 @@ function moveNext() {
 }
 function getData(page) {
     $.ajax({
-        url: '/congviec?page=' + page,
+        url: '/hoso?page=' + page,
         type: "get",
         datatype: "json",
         data:
@@ -109,10 +61,10 @@ function getData(page) {
             alert('Server gặp lỗi!');
         });
 }
-function congviec_search() {
-    var search = document.querySelector('#congviec-search').value;
+function hoso_search() {
+    var search = document.querySelector('#hoso-search').value;
     $.ajax({
-        url: '/congviec',
+        url: '/hoso',
         type: "get",
         datatype: "json",
         data: {
@@ -140,7 +92,7 @@ function laysotrang() {
     var pageNumber = link.innerText;
     return parseInt(pageNumber);
 }
-function reloadCV() {
+function reloadHS() {
     var tht = laysotrang();
     getData(tht);
 }
